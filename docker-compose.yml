@@ -88,6 +88,7 @@ services:
       - MYSQL_DB=expenseservice
 
   ds-service:
+    build: ./backend/ds-service
     image: ds-service
     container_name: ds-service
     depends_on:

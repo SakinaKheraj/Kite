@@ -2,6 +2,7 @@
 **/build/
 **/.gradle/
 **/*.jar
+!backend/jars/*.jar
 **/*.war
 
 # IDE & OS metadata

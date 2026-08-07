@@ -1,7 +1,6 @@
 package com.example.userservice.service;
 
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
@@ -21,12 +20,13 @@ public class UserService {
     public UserInfoDto createOrUpdateUser(UserInfoDto userInfoDto) {
         
         UnaryOperator<UserInfo> updatingUser = user -> {
-            // Todo: implement update logic
             user.setEmail(userInfoDto.getEmail());
+            user.setUsername(userInfoDto.getUsername());
             user.setFirstName(userInfoDto.getFirstName());
             user.setLastName(userInfoDto.getLastName());
             user.setPhoneNumber(userInfoDto.getPhoneNumber());
             user.setProfilePic(userInfoDto.getProfilePic());
+            user.setCreatedAt(userInfoDto.getCreatedAt());
 
             return userRepository.save(user); 
         };
@@ -41,11 +41,13 @@ public class UserService {
 
         return new UserInfoDto(
             userInfo.getUserId(),
+            userInfo.getUsername(),
             userInfo.getFirstName(),
             userInfo.getLastName(),
             userInfo.getPhoneNumber(),
             userInfo.getEmail(),
-            userInfo.getProfilePic()
+            userInfo.getProfilePic(),
+            userInfo.getCreatedAt()
         );
     }
 
@@ -59,11 +61,13 @@ public class UserService {
         
         return new UserInfoDto(
             userInfo.getUserId(),
+            userInfo.getUsername(),
             userInfo.getFirstName(),
             userInfo.getLastName(),
             userInfo.getPhoneNumber(),
             userInfo.getEmail(),
-            userInfo.getProfilePic()
+            userInfo.getProfilePic(),
+            userInfo.getCreatedAt()
         );
     }
 }

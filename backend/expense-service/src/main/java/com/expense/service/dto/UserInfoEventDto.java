@@ -1,7 +1,5 @@
 package com.expense.service.dto;
 
-import java.sql.Timestamp;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
@@ -20,31 +18,26 @@ import lombok.Setter;
 @Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public class ExpenseDto {
-
-    private Long id;
-
-    @JsonProperty("external_id")
-    private String externalId;
-    
-    @JsonProperty("amount")
-    private String amount;
-
-    @JsonProperty("category")
-    private String category;
-
-    @JsonProperty("description")
-    private String description;
+public class UserInfoEventDto {
 
     @JsonProperty("user_id")
     private String userId;
 
-    @JsonProperty("merchant")
-    private String merchant;
+    @JsonProperty("username")
+    private String username;
 
-    @JsonProperty("currency")
-    private String currency;
+    @JsonProperty("first_name")
+    private String firstName;
+
+    @JsonProperty("last_name")
+    private String lastName;
+
+    @JsonProperty("email")
+    private String email;
+
+    @JsonProperty("phone_number")
+    private Long phoneNumber;
 
     @JsonProperty("created_at")
-    private Timestamp createdAt;
+    private Long createdAt;
 }

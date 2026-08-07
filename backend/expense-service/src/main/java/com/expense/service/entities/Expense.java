@@ -43,6 +43,12 @@ public class Expense {
     @Column(name = "amount")
     private String amount;
 
+    @Column(name = "category")
+    private String category;
+
+    @Column(name = "description")
+    private String description;
+
     @Column(name = "currency")
     private String currency;
 
@@ -54,9 +60,12 @@ public class Expense {
 
     @PrePersist
     @PreUpdate
-    private void genrateExternalId() {
-        if(this.externalId == null) {
+    private void generateExternalIdAndTimestamp() {
+        if (this.externalId == null) {
             this.externalId = UUID.randomUUID().toString();
+        }
+        if (this.createdAt == null) {
+            this.createdAt = new Timestamp(System.currentTimeMillis());
         }
     }
 }

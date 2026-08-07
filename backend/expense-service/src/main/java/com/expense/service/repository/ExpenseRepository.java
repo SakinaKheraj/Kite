@@ -1,23 +1,22 @@
 package com.expense.service.repository;
 
-import org.antlr.v4.runtime.atn.SemanticContext.AND;
-import org.springframework.data.repository.CrudRepository;
-
-import com.expense.service.entities.Expense;
-
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-public interface ExpenseRepository extends CrudRepository<Expense, Long>{
+import com.expense.service.entities.Expense;
 
-    // List<Expense> findByUserId(String userId);
+@Repository
+public interface ExpenseRepository extends JpaRepository<Expense, Long> {
+
     List<Expense> findByUserId(String userId);
 
-    // SELECT * FROM expenses WHERE user_id = ? AND created_at BETWEEN ? AND ?;
-    List<Expense> findByUserIdAndCreatedAtBetween(String userId, Timestamp stsrtTime, Timestamp endTime);
+    List<Expense> findByUserIdAndCreatedAtBetween(String userId, Timestamp startTime, Timestamp endTime);
 
-    // SELECT * FROM expenses WHERE user_id = ? AND external_id = ?;
     Optional<Expense> findByUserIdAndExternalId(String userId, String externalId);
+
+    Optional<Expense> findByIdAndUserId(Long id, String userId);
 }

@@ -56,6 +56,8 @@ services:
       - MYSQL_HOST=mysql-8.3.0
       - MYSQL_PORT=3306
       - MYSQL_DB=authservice
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=#Sakina22
 
   user-service:
     image: user-service
@@ -71,6 +73,8 @@ services:
       - MYSQL_HOST=mysql-8.3.0
       - MYSQL_PORT=3306
       - MYSQL_DB=userservice
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=#Sakina22
 
   expense-service:
     image: expense-service
@@ -86,6 +90,8 @@ services:
       - MYSQL_HOST=mysql-8.3.0
       - MYSQL_PORT=3306
       - MYSQL_DB=expenseservice
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=#Sakina22
 
   ds-service:
     build: ./backend/ds-service

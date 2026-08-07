@@ -1,0 +1,16 @@
+# Compiled build binaries
+**/build/
+**/.gradle/
+**/*.jar
+**/*.war
+
+# IDE & OS metadata
+.idea/
+.vscode/
+*.iml
+.DS_Store
+
+# Flutter dependencies & build files
+**/frontend/**/.dart_tool/
+**/frontend/**/.pub-cache/
+**/frontend/**/build/

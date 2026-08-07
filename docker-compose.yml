@@ -43,6 +43,9 @@ services:
       - mysql-db:/var/lib/mysql
 
   auth-service:
+    build:
+      context: .
+      dockerfile: backend/auth-service/Dockerfile
     image: auth-service
     container_name: auth-service
     depends_on:
@@ -60,6 +63,9 @@ services:
       - MYSQL_PASSWORD=#Sakina22
 
   user-service:
+    build:
+      context: .
+      dockerfile: backend/user-service/Dockerfile
     image: user-service
     container_name: user-service
     depends_on:
@@ -77,6 +83,9 @@ services:
       - MYSQL_PASSWORD=#Sakina22
 
   expense-service:
+    build:
+      context: .
+      dockerfile: backend/expense-service/Dockerfile
     image: expense-service
     container_name: expense-service
     depends_on:
@@ -94,7 +103,9 @@ services:
       - MYSQL_PASSWORD=#Sakina22
 
   ds-service:
-    build: ./backend/ds-service
+    build:
+      context: ./backend/ds-service
+      dockerfile: Dockerfile
     image: ds-service
     container_name: ds-service
     depends_on:

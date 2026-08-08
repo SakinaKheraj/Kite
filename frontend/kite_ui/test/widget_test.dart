@@ -1,30 +1,33 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
+import 'package:kite_ui/core/network/api_client.dart';
+import 'package:kite_ui/core/utils/storage_service.dart';
+import 'package:kite_ui/features/auth/data/datasources/auth_remote_data_source.dart';
+import 'package:kite_ui/features/auth/data/repositories/auth_repository_impl.dart';
+import 'package:kite_ui/features/auth/domain/usecases/check_auth_usecase.dart';
+import 'package:kite_ui/features/auth/domain/usecases/login_usecase.dart';
+import 'package:kite_ui/features/auth/domain/usecases/logout_usecase.dart';
+import 'package:kite_ui/features/auth/domain/usecases/signup_usecase.dart';
+import 'package:kite_ui/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:kite_ui/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('KiteApp smoke test', (WidgetTester tester) async {
+    final storageService = StorageService();
+    final apiClient = ApiClient(storageService: storageService);
+    final authRemoteDataSource = AuthRemoteDataSourceImpl(apiClient: apiClient);
+    final authRepository = AuthRepositoryImpl(
+      remoteDataSource: authRemoteDataSource,
+      storageService: storageService,
+    );
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    final authBloc = AuthBloc(
+      signupUseCase: SignupUseCase(authRepository),
+      loginUseCase: LoginUseCase(authRepository),
+      checkAuthUseCase: CheckAuthUseCase(authRepository),
+      logoutUseCase: LogoutUseCase(authRepository),
+    );
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    await tester.pumpWidget(KiteApp(authBloc: authBloc));
+    expect(find.text('Welcome Back'), findsOneWidget);
   });
 }

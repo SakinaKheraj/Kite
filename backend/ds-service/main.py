@@ -119,7 +119,7 @@ def parse_sms_direct(payload: Dict[str, Any]):
         return {
             "amount": amount_val,
             "category": str(data.get("category") or "Other").capitalize(),
-            "description": str(data.get("merchant_name") or data.get("description") or "SMS Expense"),
+            "description": str(data.get("description") or data.get("merchant") or data.get("merchant_name") or "Bank Transaction"),
             "confidence": 0.95
         }
     else:

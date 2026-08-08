@@ -9,10 +9,9 @@ class LLMService:
         self.prompt = ChatPromptTemplate.from_messages([
             (
                 "system",
-                "You are an expert extraction algorithm. "
-                "Only extract relevant information from the text. "
-                "If you do not know the value of an attribute asked to extract, "
-                "return null for the attribute's value."
+                "You are an expert financial SMS extraction algorithm. "
+                "Extract the exact monetary amount, category (Food, Travel, Utilities, Entertainment, SMS), "
+                "and a descriptive string explaining WHERE or WHAT the money was spent on (e.g. 'Uber ride to airport', 'Swiggy order', 'Electricity bill payment')."
             ),
             ("human", "{text}")
         ])
@@ -31,7 +30,7 @@ class LLMService:
         if self.runnable:
             try:
                 result = self.runnable.invoke({"text": message})
-                if result:
+                if result and result.amount:
                     return result
             except Exception as ex:
                 print(f"WARNING: LLM invocation failed ({ex}). Falling back to regex extraction...")
@@ -48,31 +47,43 @@ class LLMService:
         if amount_match:
             amount_val = amount_match.group(1).replace(',', '')
 
-        # Category and Merchant detection heuristic
-        category_val = "Other"
-        merchant_val = "Bank Transaction"
         text_lower = text.lower()
+        desc_val = ""
 
+        # Extract "for <purpose>" or "at <merchant>"
+        purpose_match = re.search(r'(?:for|at|towards)\s+([A-Za-z0-9\s\-_]+?)(?=\s+(?:via|using|from|ending|card|upi|on|ref|txn|transaction|successful|\.|$))', text, re.IGNORECASE)
+        if purpose_match:
+            desc_val = purpose_match.group(1).strip()
+
+        if not desc_val or len(desc_val) < 2:
+            if "uber" in text_lower:
+                desc_val = "Uber ride"
+            elif "swiggy" in text_lower:
+                desc_val = "Swiggy order"
+            elif "zomato" in text_lower:
+                desc_val = "Zomato order"
+            elif "electricity" in text_lower or "bill" in text_lower:
+                desc_val = "Electricity Bill Payment"
+            else:
+                desc_val = "Card / Bank Transaction"
+
+        # Heuristic for category selection
+        category_val = "SMS"
         if any(k in text_lower for k in ["swiggy", "zomato", "restaurant", "food", "dining", "cafe", "dominos", "kfc", "mcdonald"]):
             category_val = "Food"
-            merchant_val = "Swiggy" if "swiggy" in text_lower else ("Zomato" if "zomato" in text_lower else "Food & Dining")
-        elif any(k in text_lower for k in ["uber", "ola", "flight", "airline", "railway", "irctc", "fuel", "petrol", "cab", "travel", "auto"]):
+        elif any(k in text_lower for k in ["uber", "ola", "flight", "airline", "railway", "irctc", "fuel", "petrol", "cab", "travel", "auto", "ride"]):
             category_val = "Travel"
-            merchant_val = "Uber" if "uber" in text_lower else ("Ola" if "ola" in text_lower else "Travel")
         elif any(k in text_lower for k in ["electricity", "bill", "water", "recharge", "airtel", "jio", "vi", "bescom", "utility"]):
             category_val = "Utilities"
-            merchant_val = "Utility Bill"
         elif any(k in text_lower for k in ["movie", "cinema", "pvr", "inox", "bookmyshow", "netflix", "prime", "spotify"]):
             category_val = "Entertainment"
-            merchant_val = "Entertainment"
         else:
-            merchant_match = re.search(r'(?:at|vpa|to|info)\s+([A-Za-z0-9_\-\.]+)', text, re.IGNORECASE)
-            if merchant_match:
-                merchant_val = merchant_match.group(1)
+            category_val = "SMS"
 
         return Expense(
             amount=amount_val,
             category=category_val,
-            merchant_name=merchant_val,
+            merchant=desc_val,
+            description=desc_val,
             currency="INR"
         )

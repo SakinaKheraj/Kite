@@ -15,8 +15,16 @@ import 'features/auth/domain/usecases/signup_usecase.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/auth/presentation/bloc/auth_event.dart';
 import 'features/auth/presentation/bloc/auth_state.dart';
-import 'features/auth/presentation/screens/home_screen_placeholder.dart';
 import 'features/auth/presentation/screens/login_screen.dart';
+
+import 'features/expense/data/datasources/expense_remote_data_source.dart';
+import 'features/expense/data/repositories/expense_repository_impl.dart';
+import 'features/expense/domain/usecases/add_expense_usecase.dart';
+import 'features/expense/domain/usecases/delete_expense_usecase.dart';
+import 'features/expense/domain/usecases/get_expense_summary_usecase.dart';
+import 'features/expense/domain/usecases/get_expenses_usecase.dart';
+import 'features/expense/presentation/bloc/expense_bloc.dart';
+import 'features/expense/presentation/screens/expense_dashboard_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,40 +33,68 @@ void main() {
   final storageService = StorageService();
   final apiClient = ApiClient(storageService: storageService);
 
-  // Data Sources & Repository
+  // Auth Data Sources & Repository
   final authRemoteDataSource = AuthRemoteDataSourceImpl(apiClient: apiClient);
   final authRepository = AuthRepositoryImpl(
     remoteDataSource: authRemoteDataSource,
     storageService: storageService,
   );
 
-  // Use Cases
+  // Auth Use Cases
   final signupUseCase = SignupUseCase(authRepository);
   final loginUseCase = LoginUseCase(authRepository);
   final checkAuthUseCase = CheckAuthUseCase(authRepository);
   final logoutUseCase = LogoutUseCase(authRepository);
 
+  // Expense Data Sources & Repository
+  final expenseRemoteDataSource = ExpenseRemoteDataSourceImpl(apiClient: apiClient);
+  final expenseRepository = ExpenseRepositoryImpl(remoteDataSource: expenseRemoteDataSource);
+
+  // Expense Use Cases
+  final getExpensesUseCase = GetExpensesUseCase(expenseRepository);
+  final getExpenseSummaryUseCase = GetExpenseSummaryUseCase(expenseRepository);
+  final addExpenseUseCase = AddExpenseUseCase(expenseRepository);
+  final deleteExpenseUseCase = DeleteExpenseUseCase(expenseRepository);
+
+  final authBloc = AuthBloc(
+    signupUseCase: signupUseCase,
+    loginUseCase: loginUseCase,
+    checkAuthUseCase: checkAuthUseCase,
+    logoutUseCase: logoutUseCase,
+  )..add(const CheckAuthStatusRequested());
+
+  final expenseBloc = ExpenseBloc(
+    getExpensesUseCase: getExpensesUseCase,
+    getExpenseSummaryUseCase: getExpenseSummaryUseCase,
+    addExpenseUseCase: addExpenseUseCase,
+    deleteExpenseUseCase: deleteExpenseUseCase,
+  );
+
   runApp(
     KiteApp(
-      authBloc: AuthBloc(
-        signupUseCase: signupUseCase,
-        loginUseCase: loginUseCase,
-        checkAuthUseCase: checkAuthUseCase,
-        logoutUseCase: logoutUseCase,
-      )..add(const CheckAuthStatusRequested()),
+      authBloc: authBloc,
+      expenseBloc: expenseBloc,
     ),
   );
 }
 
 class KiteApp extends StatelessWidget {
   final AuthBloc authBloc;
+  final ExpenseBloc expenseBloc;
 
-  const KiteApp({super.key, required this.authBloc});
+  const KiteApp({
+    super.key,
+    required this.authBloc,
+    required this.expenseBloc,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: authBloc,
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider.value(value: authBloc),
+        BlocProvider.value(value: expenseBloc),
+      ],
       child: MaterialApp(
         title: 'Kite Expense Tracker',
         debugShowCheckedModeBanner: false,
@@ -66,7 +102,7 @@ class KiteApp extends StatelessWidget {
         home: BlocBuilder<AuthBloc, AuthState>(
           builder: (context, state) {
             if (state is Authenticated) {
-              return HomeScreenPlaceholder(userId: state.userId);
+              return ExpenseDashboardScreen(userId: state.userId);
             }
             return const LoginScreen();
           },

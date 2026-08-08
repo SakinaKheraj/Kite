@@ -9,7 +9,7 @@ class ApiClient {
   ApiClient({required this.storageService}) {
     dio = Dio(
       BaseOptions(
-        baseUrl: Endpoints.baseUrl,
+        baseUrl: Endpoints.authBaseUrl,
         connectTimeout: const Duration(seconds: 15),
         receiveTimeout: const Duration(seconds: 15),
         headers: {
@@ -22,7 +22,9 @@ class ApiClient {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          options.baseUrl = Endpoints.baseUrl;
+          if (!options.path.startsWith('http')) {
+            options.baseUrl = Endpoints.authBaseUrl;
+          }
           final token = await storageService.getToken();
           if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';
@@ -42,5 +44,9 @@ class ApiClient {
 
   Future<Response> post(String path, {dynamic data}) async {
     return await dio.post(path, data: data);
+  }
+
+  Future<Response> delete(String path) async {
+    return await dio.delete(path);
   }
 }

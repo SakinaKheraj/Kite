@@ -22,6 +22,10 @@ import 'package:kite_ui/features/expense/domain/usecases/update_expense_usecase.
 import 'package:kite_ui/features/expense/presentation/bloc/ai_parser_bloc.dart';
 import 'package:kite_ui/features/expense/presentation/bloc/expense_bloc.dart';
 
+import 'package:kite_ui/features/sms_listener/data/datasources/sms_local_data_source.dart';
+import 'package:kite_ui/features/sms_listener/data/repositories/sms_repository_impl.dart';
+import 'package:kite_ui/features/sms_listener/presentation/bloc/sms_listener_bloc.dart';
+
 import 'package:kite_ui/main.dart';
 
 void main() {
@@ -54,12 +58,21 @@ void main() {
     );
 
     final aiRemoteDataSource = AiRemoteDataSourceImpl(apiClient: apiClient);
-    final aiParserBloc = AiParserBloc(parseSmsUseCase: ParseSmsUseCase(aiRemoteDataSource));
+    final parseSmsUseCase = ParseSmsUseCase(aiRemoteDataSource);
+    final aiParserBloc = AiParserBloc(parseSmsUseCase: parseSmsUseCase);
+
+    final smsLocalDataSource = SmsLocalDataSourceImpl();
+    final smsRepository = SmsRepositoryImpl(localDataSource: smsLocalDataSource);
+    final smsListenerBloc = SmsListenerBloc(
+      smsRepository: smsRepository,
+      parseSmsUseCase: parseSmsUseCase,
+    );
 
     await tester.pumpWidget(KiteApp(
       authBloc: authBloc,
       expenseBloc: expenseBloc,
       aiParserBloc: aiParserBloc,
+      smsListenerBloc: smsListenerBloc,
     ));
     expect(find.text('Welcome Back'), findsOneWidget);
   });

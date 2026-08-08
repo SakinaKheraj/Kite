@@ -30,6 +30,10 @@ import 'features/expense/presentation/bloc/ai_parser_bloc.dart';
 import 'features/expense/presentation/bloc/expense_bloc.dart';
 import 'features/expense/presentation/screens/expense_dashboard_screen.dart';
 
+import 'features/sms_listener/data/datasources/sms_local_data_source.dart';
+import 'features/sms_listener/data/repositories/sms_repository_impl.dart';
+import 'features/sms_listener/presentation/bloc/sms_listener_bloc.dart';
+
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -65,6 +69,14 @@ void main() {
   final aiRemoteDataSource = AiRemoteDataSourceImpl(apiClient: apiClient);
   final parseSmsUseCase = ParseSmsUseCase(aiRemoteDataSource);
 
+  // SMS Listener Data Source, Repository & BLoC
+  final smsLocalDataSource = SmsLocalDataSourceImpl();
+  final smsRepository = SmsRepositoryImpl(localDataSource: smsLocalDataSource);
+  final smsListenerBloc = SmsListenerBloc(
+    smsRepository: smsRepository,
+    parseSmsUseCase: parseSmsUseCase,
+  );
+
   final authBloc = AuthBloc(
     signupUseCase: signupUseCase,
     loginUseCase: loginUseCase,
@@ -87,6 +99,7 @@ void main() {
       authBloc: authBloc,
       expenseBloc: expenseBloc,
       aiParserBloc: aiParserBloc,
+      smsListenerBloc: smsListenerBloc,
     ),
   );
 }
@@ -95,12 +108,14 @@ class KiteApp extends StatelessWidget {
   final AuthBloc authBloc;
   final ExpenseBloc expenseBloc;
   final AiParserBloc aiParserBloc;
+  final SmsListenerBloc smsListenerBloc;
 
   const KiteApp({
     super.key,
     required this.authBloc,
     required this.expenseBloc,
     required this.aiParserBloc,
+    required this.smsListenerBloc,
   });
 
   @override
@@ -110,6 +125,7 @@ class KiteApp extends StatelessWidget {
         BlocProvider.value(value: authBloc),
         BlocProvider.value(value: expenseBloc),
         BlocProvider.value(value: aiParserBloc),
+        BlocProvider.value(value: smsListenerBloc),
       ],
       child: MaterialApp(
         title: 'Kite Expense Tracker',

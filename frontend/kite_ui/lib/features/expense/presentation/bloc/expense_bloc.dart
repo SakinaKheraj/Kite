@@ -35,7 +35,15 @@ class ExpenseBloc extends Bloc<ExpenseEvent, ExpenseState> {
     FetchDashboardDataRequested event,
     Emitter<ExpenseState> emit,
   ) async {
-    emit(const ExpenseLoading());
+    final currentSelectedCategory = state is ExpenseLoaded
+        ? (state as ExpenseLoaded).selectedCategory
+        : 'All';
+
+    // Only emit ExpenseLoading on initial app launch to prevent full-page flickering
+    if (state is ExpenseInitial) {
+      emit(const ExpenseLoading());
+    }
+
     try {
       final results = await Future.wait([
         getExpensesUseCase.execute(event.userId),
@@ -45,14 +53,26 @@ class ExpenseBloc extends Bloc<ExpenseEvent, ExpenseState> {
       final expenses = results[0] as List<ExpenseEntity>;
       final summary = results[1] as dynamic;
 
+      List<ExpenseEntity> filtered;
+      if (currentSelectedCategory == 'All') {
+        filtered = expenses;
+      } else {
+        filtered = expenses
+            .where((item) => item.category.toLowerCase() == currentSelectedCategory.toLowerCase())
+            .toList();
+      }
+
       emit(ExpenseLoaded(
         expenses: expenses,
-        filteredExpenses: expenses,
+        filteredExpenses: filtered,
         summary: summary,
-        selectedCategory: 'All',
+        selectedCategory: currentSelectedCategory,
       ));
     } catch (e) {
-      emit(ExpenseFailure(e.toString().replaceAll('Exception: ', '')));
+      // If error occurs during background refresh, preserve existing loaded state if present
+      if (state is! ExpenseLoaded) {
+        emit(ExpenseFailure(e.toString().replaceAll('Exception: ', '')));
+      }
     }
   }
 

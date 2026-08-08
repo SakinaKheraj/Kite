@@ -118,7 +118,7 @@ services:
     environment:
       - KAFKA_HOST=kafka
       - KAFKA_PORT=9092
-      - MISTRAL_API_KEY=${MISTRAL_API_KEY:-your_mistral_api_key_here}
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY:-aR86S1G0ZPiSaC1ykkyVJ8pkWAW2c1Le}
 
 volumes:
   mysql-db:

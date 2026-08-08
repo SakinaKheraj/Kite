@@ -1,6 +1,5 @@
 package com.expense.service.service;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -64,10 +63,17 @@ public class ExpenseService {
     }
 
     public boolean updateExpense(ExpenseDto expenseDto) {
-        Optional<Expense> expenseFoundOpt = expenseRepository.findByUserIdAndExternalId(
-            expenseDto.getUserId(),
-            expenseDto.getExternalId()
-        );
+        Optional<Expense> expenseFoundOpt = Optional.empty();
+        if (expenseDto.getExternalId() != null) {
+            expenseFoundOpt = expenseRepository.findByUserIdAndExternalId(
+                expenseDto.getUserId(),
+                expenseDto.getExternalId()
+            );
+        }
+        if (expenseFoundOpt.isEmpty() && expenseDto.getId() != null) {
+            expenseFoundOpt = expenseRepository.findById(expenseDto.getId());
+        }
+
         if (expenseFoundOpt.isEmpty()) return false;
 
         Expense expense = expenseFoundOpt.get();
@@ -117,7 +123,9 @@ public class ExpenseService {
         List<Category> categoryEntities = categoryRepository.findByUserId(userId);
         List<String> categoryNames = categoryEntities.stream().map(Category::getName).collect(Collectors.toList());
         if (categoryNames.isEmpty()) {
-            categoryNames = Arrays.asList("Food", "Travel", "Utilities", "Entertainment");
+            categoryNames = Arrays.asList("Food", "Travel", "Utilities", "Entertainment", "SMS");
+        } else if (!categoryNames.contains("SMS")) {
+            categoryNames.add("SMS");
         }
 
         return ExpenseSummaryDto.builder()
@@ -139,7 +147,7 @@ public class ExpenseService {
     }
 
     public void initializeUserDefaultCategoriesAndBudget(String userId) {
-        List<String> defaultCategories = Arrays.asList("Food", "Travel", "Utilities", "Entertainment");
+        List<String> defaultCategories = Arrays.asList("Food", "Travel", "Utilities", "Entertainment", "SMS");
         for (String catName : defaultCategories) {
             if (!categoryRepository.existsByUserIdAndName(userId, catName)) {
                 categoryRepository.save(Category.builder().userId(userId).name(catName).build());

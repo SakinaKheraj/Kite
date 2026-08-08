@@ -26,6 +26,15 @@ class AddExpenseSubmitted extends ExpenseEvent {
   List<Object?> get props => [expense];
 }
 
+class UpdateExpenseSubmitted extends ExpenseEvent {
+  final ExpenseEntity expense;
+
+  const UpdateExpenseSubmitted(this.expense);
+
+  @override
+  List<Object?> get props => [expense];
+}
+
 class DeleteExpenseRequested extends ExpenseEvent {
   final dynamic id;
   final String userId;

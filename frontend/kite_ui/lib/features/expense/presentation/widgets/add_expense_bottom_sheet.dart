@@ -9,12 +9,14 @@ import 'ai_sms_input_modal.dart';
 class AddExpenseBottomSheet extends StatefulWidget {
   final String userId;
   final List<String> availableCategories;
+  final ExpenseEntity? initialExpense;
   final Function(ExpenseEntity) onSubmit;
 
   const AddExpenseBottomSheet({
     super.key,
     required this.userId,
     required this.availableCategories,
+    this.initialExpense,
     required this.onSubmit,
   });
 
@@ -24,22 +26,42 @@ class AddExpenseBottomSheet extends StatefulWidget {
 
 class _AddExpenseBottomSheetState extends State<AddExpenseBottomSheet> {
   final _formKey = GlobalKey<FormState>();
-  final _amountController = TextEditingController();
-  final _descriptionController = TextEditingController();
+  late final TextEditingController _amountController;
+  late final TextEditingController _descriptionController;
   late String _selectedCategory;
   bool _isAutoFilled = false;
-  double _aiConfidence = 0.95;
 
   @override
   void initState() {
     super.initState();
-    final categories = widget.availableCategories.isNotEmpty
-        ? widget.availableCategories
-        : ['Food', 'Travel', 'Utilities', 'Entertainment'];
-    _selectedCategory = categories.firstWhere(
-      (c) => c.toLowerCase() != 'all',
-      orElse: () => 'Food',
+    final expense = widget.initialExpense;
+    _amountController = TextEditingController(
+      text: expense != null && expense.amount > 0 ? expense.amount.toStringAsFixed(2) : '',
     );
+    _descriptionController = TextEditingController(
+      text: expense != null ? expense.description : '',
+    );
+
+    final categories = _buildCategoryList();
+    if (expense != null && expense.category.isNotEmpty) {
+      _selectedCategory = categories.firstWhere(
+        (c) => c.toLowerCase() == expense.category.toLowerCase(),
+        orElse: () => categories.first,
+      );
+    } else {
+      _selectedCategory = categories.firstWhere(
+        (c) => c.toLowerCase() != 'all',
+        orElse: () => 'Food',
+      );
+    }
+  }
+
+  List<String> _buildCategoryList() {
+    final list = widget.availableCategories.isNotEmpty
+        ? widget.availableCategories.where((c) => c.toLowerCase() != 'all').toList()
+        : ['Food', 'Travel', 'Utilities', 'Entertainment', 'SMS'];
+    if (!list.contains('SMS')) list.add('SMS');
+    return list;
   }
 
   @override
@@ -64,27 +86,20 @@ class _AddExpenseBottomSheetState extends State<AddExpenseBottomSheet> {
           _descriptionController.text = result.description;
         }
 
-        // Category mapping & fallback
-        final categories = (widget.availableCategories.isNotEmpty
-                ? widget.availableCategories
-                : ['Food', 'Travel', 'Utilities', 'Entertainment'])
-            .where((c) => c.toLowerCase() != 'all')
-            .toList();
-
+        final categories = _buildCategoryList();
         final match = categories.firstWhere(
           (c) => c.toLowerCase() == result.category.toLowerCase(),
-          orElse: () => categories.first,
+          orElse: () => 'SMS',
         );
         _selectedCategory = match;
         _isAutoFilled = true;
-        _aiConfidence = result.confidence;
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text(
-            '✨ Auto-filled from SMS with ${(_aiConfidence * 100).toStringAsFixed(0)}% confidence!',
-            style: const TextStyle(fontWeight: FontWeight.bold),
+            '✨ Expense auto-filled from SMS!',
+            style: TextStyle(fontWeight: FontWeight.bold),
           ),
           backgroundColor: AppColors.secondary,
           behavior: SnackBarBehavior.floating,
@@ -97,11 +112,13 @@ class _AddExpenseBottomSheetState extends State<AddExpenseBottomSheet> {
     if (_formKey.currentState!.validate()) {
       final amount = double.parse(_amountController.text.trim());
       final expense = ExpenseEntity(
+        id: widget.initialExpense?.id,
         userId: widget.userId,
         amount: amount,
         category: _selectedCategory,
         description: _descriptionController.text.trim(),
         currency: 'INR',
+        createdAt: widget.initialExpense?.createdAt,
       );
       widget.onSubmit(expense);
       Navigator.pop(context);
@@ -110,11 +127,8 @@ class _AddExpenseBottomSheetState extends State<AddExpenseBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final categories = (widget.availableCategories.isNotEmpty
-            ? widget.availableCategories
-            : ['Food', 'Travel', 'Utilities', 'Entertainment'])
-        .where((c) => c.toLowerCase() != 'all')
-        .toList();
+    final categories = _buildCategoryList();
+    final isEditing = widget.initialExpense != null;
 
     return Padding(
       padding: EdgeInsets.only(
@@ -133,9 +147,9 @@ class _AddExpenseBottomSheetState extends State<AddExpenseBottomSheet> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Record Expense',
-                    style: TextStyle(
+                  Text(
+                    isEditing ? 'Edit Expense' : 'Record Expense',
+                    style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -149,86 +163,87 @@ class _AddExpenseBottomSheetState extends State<AddExpenseBottomSheet> {
               ),
               const SizedBox(height: 12),
 
-              // AI Auto-Fill Action Banner
-              InkWell(
-                onTap: _openAiSmsModal,
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+              if (!isEditing) ...[
+                // AI Auto-Fill Action Banner
+                InkWell(
+                  onTap: _openAiSmsModal,
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF6366F1).withAlpha(80),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
                     ),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF6366F1).withAlpha(80),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 20),
-                      const SizedBox(width: 10),
-                      const Expanded(
-                        child: Text(
-                          'Auto-Fill with AI / Paste SMS',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
+                    child: Row(
+                      children: [
+                        const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 20),
+                        const SizedBox(width: 10),
+                        const Expanded(
+                          child: Text(
+                            'Auto-Fill with AI / Paste SMS',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
                           ),
                         ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withAlpha(50),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Text(
-                          'FAST ⚡',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 10,
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withAlpha(50),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Text(
+                            'FAST ⚡',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 10,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-
-              if (_isAutoFilled) ...[
-                const SizedBox(height: 10),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AppColors.secondary.withAlpha(30),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.check_circle_rounded, color: AppColors.secondary, size: 16),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Fields pre-filled via Mistral AI (${(_aiConfidence * 100).toStringAsFixed(0)}% match)',
-                        style: const TextStyle(
-                          color: AppColors.secondary,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
+                if (_isAutoFilled) ...[
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.secondary.withAlpha(30),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.check_circle_rounded, color: AppColors.secondary, size: 16),
+                        SizedBox(width: 6),
+                        Text(
+                          'Expense auto-filled from bank SMS',
+                          style: TextStyle(
+                            color: AppColors.secondary,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
+                ],
+                const SizedBox(height: 20),
               ],
-              const SizedBox(height: 20),
 
               // Category Selector Chips
               Text(
@@ -282,17 +297,17 @@ class _AddExpenseBottomSheetState extends State<AddExpenseBottomSheet> {
               ),
               const SizedBox(height: 16),
 
-              // Description Input
+              // Description Input (Merchant Name e.g. Swiggy, Uber)
               CustomTextField(
                 controller: _descriptionController,
-                label: 'Description',
-                hintText: 'e.g. Weekly grocery shopping',
+                label: 'Description / Payee',
+                hintText: 'e.g. Swiggy, Uber, Electricity Bill',
                 prefixIcon: Icons.notes_rounded,
               ),
               const SizedBox(height: 28),
 
               PrimaryButton(
-                text: 'Add Expense',
+                text: isEditing ? 'Update Expense' : 'Add Expense',
                 onPressed: _handleSubmit,
               ),
               const SizedBox(height: 24),

@@ -5,6 +5,7 @@ import '../../domain/usecases/add_expense_usecase.dart';
 import '../../domain/usecases/delete_expense_usecase.dart';
 import '../../domain/usecases/get_expense_summary_usecase.dart';
 import '../../domain/usecases/get_expenses_usecase.dart';
+import '../../domain/usecases/update_expense_usecase.dart';
 
 import 'expense_event.dart';
 import 'expense_state.dart';
@@ -13,17 +14,20 @@ class ExpenseBloc extends Bloc<ExpenseEvent, ExpenseState> {
   final GetExpensesUseCase getExpensesUseCase;
   final GetExpenseSummaryUseCase getExpenseSummaryUseCase;
   final AddExpenseUseCase addExpenseUseCase;
+  final UpdateExpenseUseCase updateExpenseUseCase;
   final DeleteExpenseUseCase deleteExpenseUseCase;
 
   ExpenseBloc({
     required this.getExpensesUseCase,
     required this.getExpenseSummaryUseCase,
     required this.addExpenseUseCase,
+    required this.updateExpenseUseCase,
     required this.deleteExpenseUseCase,
   }) : super(const ExpenseInitial()) {
     on<FetchDashboardDataRequested>(_onFetchDashboardDataRequested);
     on<CategoryFilterChanged>(_onCategoryFilterChanged);
     on<AddExpenseSubmitted>(_onAddExpenseSubmitted);
+    on<UpdateExpenseSubmitted>(_onUpdateExpenseSubmitted);
     on<DeleteExpenseRequested>(_onDeleteExpenseRequested);
   }
 
@@ -87,6 +91,23 @@ class ExpenseBloc extends Bloc<ExpenseEvent, ExpenseState> {
         add(FetchDashboardDataRequested(userId));
       } else {
         emit(const ExpenseFailure('Failed to add expense'));
+      }
+    } catch (e) {
+      emit(ExpenseFailure(e.toString().replaceAll('Exception: ', '')));
+    }
+  }
+
+  Future<void> _onUpdateExpenseSubmitted(
+    UpdateExpenseSubmitted event,
+    Emitter<ExpenseState> emit,
+  ) async {
+    final userId = event.expense.userId;
+    try {
+      final isSuccess = await updateExpenseUseCase.execute(event.expense);
+      if (isSuccess) {
+        add(FetchDashboardDataRequested(userId));
+      } else {
+        emit(const ExpenseFailure('Failed to update expense'));
       }
     } catch (e) {
       emit(ExpenseFailure(e.toString().replaceAll('Exception: ', '')));

@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,6 +19,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.expense.service.dto.ExpenseDto;
 import com.expense.service.dto.ExpenseSummaryDto;
+import com.expense.service.entities.Expense;
+import com.expense.service.repository.ExpenseRepository;
 import com.expense.service.service.ExpenseService;
 
 @RestController
@@ -30,10 +33,12 @@ import com.expense.service.service.ExpenseService;
 public class ExpenseController {
 
     private final ExpenseService expenseService;
+    private final ExpenseRepository expenseRepository;
 
     @Autowired
-    public ExpenseController(ExpenseService expenseService) {
+    public ExpenseController(ExpenseService expenseService, ExpenseRepository expenseRepository) {
         this.expenseService = expenseService;
+        this.expenseRepository = expenseRepository;
     }
 
     // --- Task 3 Core REST API Endpoints ---
@@ -47,6 +52,27 @@ public class ExpenseController {
                 return new ResponseEntity<>(true, HttpStatus.CREATED);
             }
             return new ResponseEntity<>(false, HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            return new ResponseEntity<>(false, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // PUT /v1/expenses — Update an existing expense record
+    @PutMapping("/v1/expenses")
+    public ResponseEntity<Boolean> updateExpense(@RequestBody ExpenseDto expenseDto) {
+        try {
+            boolean isUpdated = expenseService.updateExpense(expenseDto);
+            if (!isUpdated && expenseDto.getId() != null && expenseRepository.existsById(expenseDto.getId())) {
+                Expense expense = expenseRepository.findById(expenseDto.getId()).orElse(null);
+                if (expense != null) {
+                    expense.setAmount(expenseDto.getAmount());
+                    if (expenseDto.getCategory() != null) expense.setCategory(expenseDto.getCategory());
+                    if (expenseDto.getDescription() != null) expense.setDescription(expenseDto.getDescription());
+                    expenseRepository.save(expense);
+                    return new ResponseEntity<>(true, HttpStatus.OK);
+                }
+            }
+            return new ResponseEntity<>(isUpdated, isUpdated ? HttpStatus.OK : HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
             return new ResponseEntity<>(false, HttpStatus.INTERNAL_SERVER_ERROR);
         }

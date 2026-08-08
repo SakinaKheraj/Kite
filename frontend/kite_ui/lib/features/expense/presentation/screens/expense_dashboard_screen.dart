@@ -5,6 +5,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_event.dart';
 
+import '../../domain/entities/expense_entity.dart';
 import '../bloc/expense_bloc.dart';
 import '../bloc/expense_event.dart';
 import '../bloc/expense_state.dart';
@@ -30,7 +31,7 @@ class _ExpenseDashboardScreenState extends State<ExpenseDashboardScreen> {
     context.read<ExpenseBloc>().add(FetchDashboardDataRequested(widget.userId));
   }
 
-  void _showAddExpenseModal(BuildContext context, List<String> categories) {
+  void _showExpenseModal(BuildContext context, List<String> categories, {ExpenseEntity? initialExpense}) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -41,11 +42,50 @@ class _ExpenseDashboardScreenState extends State<ExpenseDashboardScreen> {
       builder: (_) => AddExpenseBottomSheet(
         userId: widget.userId,
         availableCategories: categories,
+        initialExpense: initialExpense,
         onSubmit: (expense) {
-          context.read<ExpenseBloc>().add(AddExpenseSubmitted(expense));
+          if (initialExpense != null) {
+            context.read<ExpenseBloc>().add(UpdateExpenseSubmitted(expense));
+          } else {
+            context.read<ExpenseBloc>().add(AddExpenseSubmitted(expense));
+          }
         },
       ),
     );
+  }
+
+  Map<String, List<ExpenseEntity>> _groupExpensesByDateSection(List<ExpenseEntity> items) {
+    final Map<String, List<ExpenseEntity>> sections = {};
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+
+    for (var item in items) {
+      final date = item.createdAt ?? DateTime.now();
+      final itemDate = DateTime(date.year, date.month, date.day);
+
+      String sectionTitle;
+      if (itemDate == today) {
+        sectionTitle = 'Today';
+      } else if (itemDate == yesterday) {
+        sectionTitle = 'Yesterday';
+      } else if (date.year == now.year && date.month == now.month) {
+        sectionTitle = 'This Month';
+      } else {
+        sectionTitle = '${_monthName(date.month)} ${date.year}';
+      }
+
+      sections.putIfAbsent(sectionTitle, () => []).add(item);
+    }
+    return sections;
+  }
+
+  String _monthName(int month) {
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    return months[(month - 1) % 12];
   }
 
   @override
@@ -97,6 +137,8 @@ class _ExpenseDashboardScreenState extends State<ExpenseDashboardScreen> {
           }
 
           if (state is ExpenseLoaded) {
+            final groupedExpenses = _groupExpensesByDateSection(state.filteredExpenses);
+
             return RefreshIndicator(
               color: AppColors.primary,
               onRefresh: () async {
@@ -112,7 +154,7 @@ class _ExpenseDashboardScreenState extends State<ExpenseDashboardScreen> {
                     BudgetProgressBar(summary: state.summary),
                     const SizedBox(height: 24),
 
-                    // Category Filter Section
+                    // Category Filter Section Header
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -141,7 +183,7 @@ class _ExpenseDashboardScreenState extends State<ExpenseDashboardScreen> {
                     ),
                     const SizedBox(height: 18),
 
-                    // Expense List View
+                    // Expense List View Grouped by Date Sections
                     if (state.filteredExpenses.isEmpty) ...[
                       const SizedBox(height: 40),
                       Center(
@@ -163,7 +205,7 @@ class _ExpenseDashboardScreenState extends State<ExpenseDashboardScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Tap the + button below to record your first expense',
+                              'Tap + Add Expense below to record your first transaction',
                               style: TextStyle(color: AppColors.textMuted, fontSize: 12),
                             ),
                           ],
@@ -171,25 +213,52 @@ class _ExpenseDashboardScreenState extends State<ExpenseDashboardScreen> {
                       ),
                       const SizedBox(height: 60),
                     ] else ...[
-                      ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: state.filteredExpenses.length,
-                        itemBuilder: (context, index) {
-                          final expense = state.filteredExpenses[index];
-                          return ExpenseTile(
-                            expense: expense,
-                            onDelete: () {
-                              context.read<ExpenseBloc>().add(
-                                    DeleteExpenseRequested(
-                                      id: expense.id,
-                                      userId: widget.userId,
-                                    ),
-                                  );
-                            },
-                          );
-                        },
-                      ),
+                      ...groupedExpenses.entries.map((entry) {
+                        final sectionTitle = entry.key;
+                        final items = entry.value;
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8, bottom: 8),
+                              child: Text(
+                                sectionTitle,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.secondary,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ),
+                            ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: items.length,
+                              itemBuilder: (context, index) {
+                                final expense = items[index];
+                                return ExpenseTile(
+                                  expense: expense,
+                                  onEdit: () => _showExpenseModal(
+                                    context,
+                                    state.summary.categories,
+                                    initialExpense: expense,
+                                  ),
+                                  onDelete: () {
+                                    context.read<ExpenseBloc>().add(
+                                          DeleteExpenseRequested(
+                                            id: expense.id,
+                                            userId: widget.userId,
+                                          ),
+                                        );
+                                  },
+                                );
+                              },
+                            ),
+                          ],
+                        );
+                      }),
                     ],
                   ],
                 ),
@@ -228,7 +297,7 @@ class _ExpenseDashboardScreenState extends State<ExpenseDashboardScreen> {
             elevation: 6,
             icon: const Icon(Icons.add_rounded),
             label: const Text('Add Expense', style: TextStyle(fontWeight: FontWeight.bold)),
-            onPressed: () => _showAddExpenseModal(context, categories),
+            onPressed: () => _showExpenseModal(context, categories),
           );
         },
       ),

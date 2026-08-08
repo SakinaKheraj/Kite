@@ -19,6 +19,7 @@ class Endpoints {
   static String userExpenses(String userId) => '/v1/expenses/user/$userId';
   static String userExpenseSummary(String userId) => '/v1/expenses/summary/$userId';
   static const String addExpense = '/v1/expenses';
+  static const String updateExpense = '/v1/expenses';
   static String deleteExpense(dynamic id) => '/v1/expenses/$id';
 
   // AI DS Endpoints

@@ -35,6 +35,20 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
   }
 
   @override
+  Future<bool> updateExpense(ExpenseEntity expense) async {
+    final model = ExpenseModel(
+      id: expense.id,
+      userId: expense.userId,
+      amount: expense.amount,
+      category: expense.category,
+      description: expense.description,
+      currency: expense.currency,
+      createdAt: expense.createdAt,
+    );
+    return await remoteDataSource.updateExpense(model);
+  }
+
+  @override
   Future<bool> deleteExpense(dynamic id) async {
     return await remoteDataSource.deleteExpense(id);
   }

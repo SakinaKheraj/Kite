@@ -8,6 +8,7 @@ abstract class ExpenseRemoteDataSource {
   Future<List<ExpenseModel>> getExpenses(String userId);
   Future<ExpenseSummaryModel> getExpenseSummary(String userId);
   Future<bool> addExpense(ExpenseModel expense);
+  Future<bool> updateExpense(ExpenseModel expense);
   Future<bool> deleteExpense(dynamic id);
 }
 
@@ -64,6 +65,17 @@ class ExpenseRemoteDataSourceImpl implements ExpenseRemoteDataSource {
       final url = '${Endpoints.expenseBaseUrl}${Endpoints.addExpense}';
       final response = await apiClient.post(url, data: expense.toJson());
       return response.statusCode == 200 || response.statusCode == 201;
+    } on DioException catch (e) {
+      throw Exception(_extractErrorMessage(e));
+    }
+  }
+
+  @override
+  Future<bool> updateExpense(ExpenseModel expense) async {
+    try {
+      final url = '${Endpoints.expenseBaseUrl}${Endpoints.updateExpense}';
+      final response = await apiClient.put(url, data: expense.toJson());
+      return response.statusCode == 200;
     } on DioException catch (e) {
       throw Exception(_extractErrorMessage(e));
     }

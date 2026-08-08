@@ -5,5 +5,6 @@ abstract class ExpenseRepository {
   Future<List<ExpenseEntity>> getExpenses(String userId);
   Future<ExpenseSummaryEntity> getExpenseSummary(String userId);
   Future<bool> addExpense(ExpenseEntity expense);
+  Future<bool> updateExpense(ExpenseEntity expense);
   Future<bool> deleteExpense(dynamic id);
 }

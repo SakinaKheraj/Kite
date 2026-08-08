@@ -161,10 +161,10 @@ class _SignupScreenState extends State<SignupScreen> {
                   CustomTextField(
                     controller: _passwordController,
                     label: 'Password',
-                    hintText: 'At least 6 characters',
+                    hintText: 'e.g. Password123!',
                     prefixIcon: Icons.lock_outline_rounded,
                     obscureText: !_isPasswordVisible,
-                    validator: Validators.validatePassword,
+                    validator: Validators.validateStrongPassword,
                     suffixIcon: IconButton(
                       icon: Icon(
                         _isPasswordVisible

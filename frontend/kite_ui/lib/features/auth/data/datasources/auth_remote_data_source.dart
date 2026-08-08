@@ -14,6 +14,19 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
   AuthRemoteDataSourceImpl({required this.apiClient});
 
+  String _extractErrorMessage(DioException e) {
+    if (e.response != null && e.response?.data != null) {
+      final data = e.response!.data;
+      if (data is String && data.trim().isNotEmpty) {
+        return data.trim();
+      } else if (data is Map) {
+        if (data['message'] != null) return data['message'].toString();
+        if (data['error'] != null) return data['error'].toString();
+      }
+    }
+    return e.message ?? 'Server connection error';
+  }
+
   @override
   Future<AuthResponse> signup(SignupRequest request) async {
     try {
@@ -24,8 +37,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         throw Exception(response.data['message'] ?? 'Signup failed');
       }
     } on DioException catch (e) {
-      final msg = e.response?.data?['message'] ?? e.message ?? 'Server connection error';
-      throw Exception(msg);
+      throw Exception(_extractErrorMessage(e));
     }
   }
 
@@ -39,8 +51,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         throw Exception(response.data['message'] ?? 'Invalid credentials');
       }
     } on DioException catch (e) {
-      final msg = e.response?.data?['message'] ?? e.message ?? 'Server connection error';
-      throw Exception(msg);
+      throw Exception(_extractErrorMessage(e));
     }
   }
 

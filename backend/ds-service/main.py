@@ -3,6 +3,7 @@ import sys
 import json
 from typing import Optional, Dict, Any
 from fastapi import FastAPI, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
@@ -18,6 +19,15 @@ app = FastAPI(
     title="DS Service",
     description="Data Science & ML Analytics Microservice for Expense Tracker",
     version="1.0.0"
+)
+
+# Enable CORS for Web Clients (Flutter Web / Chrome)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Global Kafka Producer state
@@ -55,10 +65,11 @@ class HealthResponse(BaseModel):
     service: str = Field(..., example="ds-service")
 
 class PredictRequest(BaseModel):
-    message: Optional[str] = Field(None, description="Raw transaction SMS or text message to analyze")
-    amount: Optional[float] = Field(None, description="Historical or proposed transaction amount")
+    text: Optional[str] = Field(None, description="Raw transaction SMS or text message")
+    message: Optional[str] = Field(None, description="Alternative field for raw text")
+    amount: Optional[float] = Field(None, description="Proposed transaction amount")
     category: Optional[str] = Field(None, description="Expense category")
-    features: Optional[Dict[str, Any]] = Field(None, description="Optional feature vector for prediction models")
+    features: Optional[Dict[str, Any]] = Field(None, description="Feature vector")
 
 class PredictResponse(BaseModel):
     status: str = Field(..., example="success")
@@ -80,16 +91,56 @@ def root():
     """Root endpoint for basic verification."""
     return {"message": "Hello World", "service": "ds-service"}
 
+@app.post("/parse-sms", tags=["Analytics"])
+@app.post("/predict", tags=["Analytics"])
+def parse_sms_direct(payload: Dict[str, Any]):
+    """
+    Parses bank SMS text and extracts amount, category, merchant description, and confidence.
+    """
+    raw_text = payload.get("text") or payload.get("message") or ""
+    if not raw_text:
+        return {
+            "amount": 0.0,
+            "category": "Other",
+            "description": "",
+            "confidence": 0.0,
+            "error": "Empty text provided"
+        }
+
+    extracted = message_service.process_msg(raw_text)
+    if extracted:
+        data = extracted.model_dump() if hasattr(extracted, 'model_dump') else extracted.dict()
+        amount_val = 0.0
+        try:
+            amount_val = float(data.get("amount", 0.0))
+        except (ValueError, TypeError):
+            amount_val = 0.0
+
+        return {
+            "amount": amount_val,
+            "category": str(data.get("category") or "Other").capitalize(),
+            "description": str(data.get("merchant_name") or data.get("description") or "SMS Expense"),
+            "confidence": 0.95
+        }
+    else:
+        return {
+            "amount": 0.0,
+            "category": "Other",
+            "description": "Non-transactional text",
+            "confidence": 0.0
+        }
+
 @app.post("/analytics/predict", response_model=PredictResponse, tags=["Analytics"])
 def predict_analytics(payload: PredictRequest):
     """
     Analyzes input payloads (SMS text, transaction amount, category, or features)
-    and returns a structured prediction response using Pydantic.
+    and returns a structured prediction response.
     """
+    raw_text = payload.text or payload.message
     prediction_result = {}
 
-    if payload.message:
-        extracted = message_service.process_msg(payload.message)
+    if raw_text:
+        extracted = message_service.process_msg(raw_text)
         if extracted:
             prediction_result["extracted_expense"] = extracted.model_dump() if hasattr(extracted, 'model_dump') else extracted.dict()
             prediction_result["is_transactional"] = True
@@ -110,7 +161,7 @@ def predict_analytics(payload: PredictRequest):
     return PredictResponse(
         status="success",
         prediction=prediction_result,
-        confidence=0.95 if payload.message or payload.amount else 0.80
+        confidence=0.95 if raw_text or payload.amount else 0.80
     )
 
 @app.post("/v1/ds/message", tags=["Message Processing"])

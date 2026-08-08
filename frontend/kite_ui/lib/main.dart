@@ -17,12 +17,15 @@ import 'features/auth/presentation/bloc/auth_event.dart';
 import 'features/auth/presentation/bloc/auth_state.dart';
 import 'features/auth/presentation/screens/login_screen.dart';
 
+import 'features/expense/data/datasources/ai_remote_data_source.dart';
 import 'features/expense/data/datasources/expense_remote_data_source.dart';
 import 'features/expense/data/repositories/expense_repository_impl.dart';
 import 'features/expense/domain/usecases/add_expense_usecase.dart';
 import 'features/expense/domain/usecases/delete_expense_usecase.dart';
 import 'features/expense/domain/usecases/get_expense_summary_usecase.dart';
 import 'features/expense/domain/usecases/get_expenses_usecase.dart';
+import 'features/expense/domain/usecases/parse_sms_usecase.dart';
+import 'features/expense/presentation/bloc/ai_parser_bloc.dart';
 import 'features/expense/presentation/bloc/expense_bloc.dart';
 import 'features/expense/presentation/screens/expense_dashboard_screen.dart';
 
@@ -56,6 +59,10 @@ void main() {
   final addExpenseUseCase = AddExpenseUseCase(expenseRepository);
   final deleteExpenseUseCase = DeleteExpenseUseCase(expenseRepository);
 
+  // AI Parser Data Source & Use Case
+  final aiRemoteDataSource = AiRemoteDataSourceImpl(apiClient: apiClient);
+  final parseSmsUseCase = ParseSmsUseCase(aiRemoteDataSource);
+
   final authBloc = AuthBloc(
     signupUseCase: signupUseCase,
     loginUseCase: loginUseCase,
@@ -70,10 +77,13 @@ void main() {
     deleteExpenseUseCase: deleteExpenseUseCase,
   );
 
+  final aiParserBloc = AiParserBloc(parseSmsUseCase: parseSmsUseCase);
+
   runApp(
     KiteApp(
       authBloc: authBloc,
       expenseBloc: expenseBloc,
+      aiParserBloc: aiParserBloc,
     ),
   );
 }
@@ -81,11 +91,13 @@ void main() {
 class KiteApp extends StatelessWidget {
   final AuthBloc authBloc;
   final ExpenseBloc expenseBloc;
+  final AiParserBloc aiParserBloc;
 
   const KiteApp({
     super.key,
     required this.authBloc,
     required this.expenseBloc,
+    required this.aiParserBloc,
   });
 
   @override
@@ -94,6 +106,7 @@ class KiteApp extends StatelessWidget {
       providers: [
         BlocProvider.value(value: authBloc),
         BlocProvider.value(value: expenseBloc),
+        BlocProvider.value(value: aiParserBloc),
       ],
       child: MaterialApp(
         title: 'Kite Expense Tracker',

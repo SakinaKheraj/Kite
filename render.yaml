@@ -1,0 +1,46 @@
+services:
+  # 1. AI Transaction Parser Service (FastAPI)
+  - type: web
+    name: kite-ds-service
+    env: docker
+    dockerContext: backend/ds-service
+    dockerfilePath: backend/ds-service/Dockerfile
+    plan: free
+    envVars:
+      - key: MISTRAL_API_KEY
+        value: aR86S1G0ZPiSaC1ykkyVJ8pkWAW2c1Le
+      - key: PORT
+        value: 8010
+
+  # 2. Authentication Service (Spring Boot)
+  - type: web
+    name: kite-auth-service
+    env: docker
+    dockerContext: .
+    dockerfilePath: backend/auth-service/Dockerfile
+    plan: free
+    envVars:
+      - key: PORT
+        value: 9898
+
+  # 3. Expense Service (Spring Boot)
+  - type: web
+    name: kite-expense-service
+    env: docker
+    dockerContext: .
+    dockerfilePath: backend/expense-service/Dockerfile
+    plan: free
+    envVars:
+      - key: PORT
+        value: 9820
+
+  # 4. User Service (Spring Boot)
+  - type: web
+    name: kite-user-service
+    env: docker
+    dockerContext: .
+    dockerfilePath: backend/user-service/Dockerfile
+    plan: free
+    envVars:
+      - key: PORT
+        value: 9899

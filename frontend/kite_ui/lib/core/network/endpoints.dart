@@ -2,13 +2,13 @@ class Endpoints {
   Endpoints._();
 
   // Auth Service Base URL (Port 9898)
-  static const String authBaseUrl = 'http://192.168.56.101:9898';
+  static const String authBaseUrl = 'http://127.0.0.1:9898';
 
   // Expense Service Base URL (Port 9820)
-  static const String expenseBaseUrl = 'http://192.168.56.101:9820';
+  static const String expenseBaseUrl = 'http://127.0.0.1:9820';
 
   // DS Service Base URL (Port 8010)
-  static const String dsBaseUrl = 'http://192.168.56.101:8010';
+  static const String dsBaseUrl = 'http://127.0.0.1:8010';
 
   // Auth Endpoints
   static const String signup = '/auth/v1/signup';

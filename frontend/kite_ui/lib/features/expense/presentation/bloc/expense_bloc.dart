@@ -45,13 +45,8 @@ class ExpenseBloc extends Bloc<ExpenseEvent, ExpenseState> {
     }
 
     try {
-      final results = await Future.wait([
-        getExpensesUseCase.execute(event.userId),
-        getExpenseSummaryUseCase.execute(event.userId),
-      ]);
-
-      final expenses = results[0] as List<ExpenseEntity>;
-      final summary = results[1] as dynamic;
+      final expenses = await getExpensesUseCase.execute(event.userId);
+      final summary = await getExpenseSummaryUseCase.execute(event.userId);
 
       List<ExpenseEntity> filtered;
       if (currentSelectedCategory == 'All') {
@@ -69,7 +64,6 @@ class ExpenseBloc extends Bloc<ExpenseEvent, ExpenseState> {
         selectedCategory: currentSelectedCategory,
       ));
     } catch (e) {
-      // If error occurs during background refresh, preserve existing loaded state if present
       if (state is! ExpenseLoaded) {
         emit(ExpenseFailure(e.toString().replaceAll('Exception: ', '')));
       }

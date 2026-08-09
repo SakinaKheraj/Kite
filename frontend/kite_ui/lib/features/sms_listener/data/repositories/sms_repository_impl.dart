@@ -25,4 +25,9 @@ class SmsRepositoryImpl implements SmsRepository {
   void stopListening() {
     localDataSource.stopListening();
   }
+
+  @override
+  Future<List<Map<String, String>>> getAndClearPendingBackgroundSms() async {
+    return await localDataSource.getAndClearPendingBackgroundSms();
+  }
 }

@@ -13,11 +13,6 @@ class SmsPrivacyFilter {
     caseSensitive: false,
   );
 
-  // 10-digit personal mobile number pattern (e.g., 9876543210, +919876543210)
-  static final RegExp _personalPhoneRegex = RegExp(
-    r'^\+?(?:91)?[6-9]\d{9}$',
-  );
-
   // OTP / CVV / Password / Account sensitive regex patterns for local sanitization
   static final RegExp _otpRegex = RegExp(
     r'(?:otp|one time password|verification code|secret code|auth code|cvv|password|pin|valid for)\s*(?:is|:|-)?\s*(\d{4,8})',
@@ -29,18 +24,13 @@ class SmsPrivacyFilter {
     caseSensitive: false,
   );
 
-  /// Validates if an SMS is an authentic financial transaction message
+  /// Validates if an SMS is a financial transaction message
   static bool isFinancialSms(String sender, String body) {
     if (body.trim().isEmpty) return false;
 
     final senderClean = sender.trim().replaceAll(RegExp(r'[^a-zA-Z0-9+]'), '');
 
-    // Rule 1: Ignore 10-digit personal phone numbers completely
-    if (_personalPhoneRegex.hasMatch(senderClean)) {
-      return false;
-    }
-
-    // Rule 2: Must match bank sender shortcodes OR contain financial keywords
+    // Check if message originates from a bank shortcode or contains transaction keywords
     final isBankSender = _bankSenderRegex.hasMatch(senderClean);
     final hasKeywords = _transactionKeywordRegex.hasMatch(body);
 

@@ -22,8 +22,12 @@ public class UserInfoProducer {
     }
 
     public void sendEventToKafka(UserInfoEvent userInfoDto) {
-        Message<UserInfoEvent> message = MessageBuilder.withPayload(userInfoDto)
-                .setHeader(KafkaHeaders.TOPIC, TOPIC_NAME).build();
-        kafkaTemplate.send(message);
+        try {
+            Message<UserInfoEvent> message = MessageBuilder.withPayload(userInfoDto)
+                    .setHeader(KafkaHeaders.TOPIC, TOPIC_NAME).build();
+            kafkaTemplate.send(message);
+        } catch (Exception e) {
+            System.err.println("Kafka send skipped: " + e.getMessage());
+        }
     }
 }

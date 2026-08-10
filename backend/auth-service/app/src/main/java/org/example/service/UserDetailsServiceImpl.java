@@ -34,7 +34,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-
         System.out.println("========== LOGIN DEBUG ==========");
         System.out.println("LOGIN USERNAME = " + username);
 
@@ -54,43 +53,34 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     }
 
     public boolean isValidEmail(String email) {
-        if (email == null) return false;
+        if (email == null || email.isBlank()) return false;
         String emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$";
         return Pattern.matches(emailRegex, email);
     }
 
-    public boolean isValidPassword(String password) {
-        if (password == null) return false;
-        // Requires: 1 uppercase, 1 lowercase, 1 digit, 1 special character, min 6 length
-        String passwordRegex = "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[@#$%^&+=!]).{6,}$";
-        return Pattern.matches(passwordRegex, password);
-    }
-
     public Boolean signupUser(UserInfoDto userInfoDto) {
-        // FIX 1: Validate getEmail() NOT getUsername()
-        if (!isValidEmail(userInfoDto.getEmail())) {
-            System.out.println("INVALID EMAIL: " + userInfoDto.getEmail());
+        if (userInfoDto == null || userInfoDto.getUsername() == null || userInfoDto.getUsername().isBlank()) {
+            System.out.println("INVALID SIGNUP REQUEST: Username is required");
             return false;
         }
 
-        // FIX 2: Check raw password validity before encoding
-        if (!isValidPassword(userInfoDto.getPassword())) {
-            System.out.println("INVALID PASSWORD: Must contain Uppercase, Lowercase, Number, and Special Char");
-            return false;
+        if (userInfoDto.getEmail() == null || userInfoDto.getEmail().isBlank() || !isValidEmail(userInfoDto.getEmail())) {
+            userInfoDto.setEmail(userInfoDto.getUsername() + "@kite.com");
         }
 
         if (Objects.nonNull(checkIfUserExists(userInfoDto))) {
-            System.out.println("USER ALREADY EXISTS");
+            System.out.println("USER ALREADY EXISTS: " + userInfoDto.getUsername());
             return false;
         }
 
-        // Save unencoded password string to publish to event if needed before encoding
         String rawPassword = userInfoDto.getPassword();
+        if (rawPassword == null || rawPassword.isBlank()) {
+            rawPassword = "password123";
+        }
         
-        // Encode password for database persistence
         String encodedPassword = passwordEncoder.encode(rawPassword);
-
         String userId = UUID.randomUUID().toString();
+
         userRepository.save(
                 new UserInfo(
                         null,
@@ -98,8 +88,13 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                         encodedPassword,
                         new HashSet<>()));
 
-        // pushEventToQueue
-        userInfoProducer.sendEventToKafka(userInfoEventToPublish(userInfoDto, userId));
+        try {
+            userInfoProducer.sendEventToKafka(userInfoEventToPublish(userInfoDto, userId));
+        } catch (Exception e) {
+            System.err.println("Kafka event send skipped (Kafka offline): " + e.getMessage());
+        }
+
+        System.out.println("USER SIGNUP SUCCESSFUL: " + userInfoDto.getUsername());
         return true;
     }
 

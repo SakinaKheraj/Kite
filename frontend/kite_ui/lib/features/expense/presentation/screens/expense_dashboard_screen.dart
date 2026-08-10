@@ -19,7 +19,7 @@ import '../bloc/expense_state.dart';
 import '../widgets/add_expense_bottom_sheet.dart';
 import '../widgets/budget_progress_bar.dart';
 import '../widgets/category_chip_selector.dart';
-import '../widgets/date_filter_selector.dart';
+import '../widgets/date_filter_dropdown.dart';
 import '../widgets/edit_budget_dialog.dart';
 import '../widgets/expense_tile.dart';
 
@@ -235,34 +235,37 @@ class _ExpenseDashboardScreenState extends State<ExpenseDashboardScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      // Section Title & Item Count
+                      // Section Header & Glassmorphic Date Filter Dropdown
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          const Text(
-                            'Transactions',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Transactions',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              Text(
+                                '${state.filteredExpenses.length} items',
+                                style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                              ),
+                            ],
                           ),
-                          Text(
-                            '${state.filteredExpenses.length} items',
-                            style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                          DateFilterDropdown(
+                            selectedFilter: state.selectedDateFilter,
+                            onFilterSelected: (filter) {
+                              context.read<ExpenseBloc>().add(DateFilterChanged(filter));
+                            },
                           ),
                         ],
                       ),
-                      const SizedBox(height: 10),
-
-                      // Date / Period Filter Bar (All, Today, This Week, This Month)
-                      DateFilterSelector(
-                        selectedFilter: state.selectedDateFilter,
-                        onFilterSelected: (filter) {
-                          context.read<ExpenseBloc>().add(DateFilterChanged(filter));
-                        },
-                      ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 14),
 
                       // Category Filter Chips
                       CategoryChipSelector(
@@ -296,7 +299,7 @@ class _ExpenseDashboardScreenState extends State<ExpenseDashboardScreen> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'Try selecting a different date or category filter',
+                                'Try selecting a different period or category filter',
                                 style: TextStyle(color: AppColors.textMuted, fontSize: 12),
                               ),
                             ],

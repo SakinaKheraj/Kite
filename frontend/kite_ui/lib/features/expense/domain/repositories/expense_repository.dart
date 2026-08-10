@@ -7,4 +7,5 @@ abstract class ExpenseRepository {
   Future<bool> addExpense(ExpenseEntity expense);
   Future<bool> updateExpense(ExpenseEntity expense);
   Future<bool> deleteExpense(dynamic id);
+  Future<bool> updateBudgetLimit(String userId, double newLimit);
 }

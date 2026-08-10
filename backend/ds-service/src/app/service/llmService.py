@@ -10,8 +10,9 @@ class LLMService:
             (
                 "system",
                 "You are an expert financial SMS extraction algorithm. "
-                "Extract the exact monetary amount, category (Food, Travel, Utilities, Entertainment, SMS), "
-                "and a descriptive string explaining WHERE or WHAT the money was spent on (e.g. 'Uber ride to airport', 'Swiggy order', 'Electricity bill payment')."
+                "Extract the exact monetary amount spent/debited/credited, category (Food, Travel, Utilities, Entertainment, SMS), "
+                "and a descriptive string explaining WHERE or WHAT the money was spent on (e.g. 'Uber ride to airport', 'Swiggy order', 'Electricity bill payment'). "
+                "CRITICAL: Completely IGNORE any OTP numbers, PINs, or verification codes present in the text when determining amounts."
             ),
             ("human", "{text}")
         ])
@@ -38,10 +39,18 @@ class LLMService:
         return self._fallback_extract(message)
 
     def _fallback_extract(self, text: str) -> Expense:
-        # Regex for Amount (e.g. INR 450.00, Rs 1200, 450.00)
-        amount_match = re.search(r'(?:inr|rs\.?|₹|\$)\s*([\d,]+(?:\.\d{1,2})?)', text, re.IGNORECASE)
+        # Pre-clean: strip OTP numbers so they are never parsed as transaction amounts
+        text_clean = re.sub(
+            r'\b(?:otp|one time password|verification code|secret code|auth code|cvv|password|pin|valid for)\b[\s:=-]*[0-9]{4,8}',
+            '',
+            text,
+            flags=re.IGNORECASE
+        )
+
+        # Regex for Amount (e.g. INR 450.00, Rs 1200, ₹450, 450.00)
+        amount_match = re.search(r'(?:inr|rs\.?|₹|\$)\s*([\d,]+(?:\.\d{1,2})?)', text_clean, re.IGNORECASE)
         if not amount_match:
-            amount_match = re.search(r'([\d,]+\.\d{2})', text)
+            amount_match = re.search(r'([\d,]+\.\d{2})', text_clean)
         
         amount_val = "0.0"
         if amount_match:
@@ -51,7 +60,7 @@ class LLMService:
         desc_val = ""
 
         # Extract "for <purpose>" or "at <merchant>"
-        purpose_match = re.search(r'(?:for|at|towards)\s+([A-Za-z0-9\s\-_]+?)(?=\s+(?:via|using|from|ending|card|upi|on|ref|txn|transaction|successful|\.|$))', text, re.IGNORECASE)
+        purpose_match = re.search(r'(?:for|at|towards)\s+([A-Za-z0-9\s\-_]+?)(?=\s+(?:via|using|from|ending|card|upi|on|ref|txn|transaction|successful|\.|$))', text_clean, re.IGNORECASE)
         if purpose_match:
             desc_val = purpose_match.group(1).strip()
 

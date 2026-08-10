@@ -10,6 +10,7 @@ abstract class ExpenseRemoteDataSource {
   Future<bool> addExpense(ExpenseModel expense);
   Future<bool> updateExpense(ExpenseModel expense);
   Future<bool> deleteExpense(dynamic id);
+  Future<bool> updateBudgetLimit(String userId, double newLimit);
 }
 
 class ExpenseRemoteDataSourceImpl implements ExpenseRemoteDataSource {
@@ -86,6 +87,17 @@ class ExpenseRemoteDataSourceImpl implements ExpenseRemoteDataSource {
     try {
       final url = '${Endpoints.expenseBaseUrl}${Endpoints.deleteExpense(id)}';
       final response = await apiClient.delete(url);
+      return response.statusCode == 200;
+    } on DioException catch (e) {
+      throw Exception(_extractErrorMessage(e));
+    }
+  }
+
+  @override
+  Future<bool> updateBudgetLimit(String userId, double newLimit) async {
+    try {
+      final url = '${Endpoints.expenseBaseUrl}${Endpoints.updateBudgetLimit(userId)}?limit=$newLimit';
+      final response = await apiClient.put(url);
       return response.statusCode == 200;
     } on DioException catch (e) {
       throw Exception(_extractErrorMessage(e));

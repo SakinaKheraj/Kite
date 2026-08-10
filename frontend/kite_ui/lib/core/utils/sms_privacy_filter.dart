@@ -15,7 +15,7 @@ class SmsPrivacyFilter {
 
   // OTP / CVV / Password / Account sensitive regex patterns for local sanitization
   static final RegExp _otpRegex = RegExp(
-    r'(?:otp|one time password|verification code|secret code|auth code|cvv|password|pin|valid for)\s*(?:is|:|-)?\s*(\d{4,8})',
+    r'\b(?:otp|one time password|verification code|secret code|auth code|cvv|password|pin|valid for)\b[\s:=-]*([0-9]{4,8})',
     caseSensitive: false,
   );
 
@@ -45,7 +45,10 @@ class SmsPrivacyFilter {
 
     // 1. Redact OTPs and verification codes
     sanitized = sanitized.replaceAllMapped(_otpRegex, (match) {
-      return match.group(0)!.replaceAll(match.group(1)!, '[REDACTED_OTP]');
+      if (match.groupCount >= 1 && match.group(1) != null) {
+        return match.group(0)!.replaceAll(match.group(1)!, '[REDACTED_OTP]');
+      }
+      return match.group(0)!;
     });
 
     // 2. Redact full 8-16 digit account numbers (preserve last 4 digits if present)

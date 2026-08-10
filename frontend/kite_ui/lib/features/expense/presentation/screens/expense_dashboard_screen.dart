@@ -19,6 +19,8 @@ import '../bloc/expense_state.dart';
 import '../widgets/add_expense_bottom_sheet.dart';
 import '../widgets/budget_progress_bar.dart';
 import '../widgets/category_chip_selector.dart';
+import '../widgets/date_filter_selector.dart';
+import '../widgets/edit_budget_dialog.dart';
 import '../widgets/expense_tile.dart';
 
 class ExpenseDashboardScreen extends StatefulWidget {
@@ -56,6 +58,27 @@ class _ExpenseDashboardScreenState extends State<ExpenseDashboardScreen> {
           } else {
             context.read<ExpenseBloc>().add(AddExpenseSubmitted(expense));
           }
+        },
+      ),
+    );
+  }
+
+  void _showEditBudgetDialog(BuildContext context, double currentBudget) {
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => EditBudgetDialog(
+        currentBudget: currentBudget,
+        onSave: (newLimit) {
+          context.read<ExpenseBloc>().add(
+                UpdateBudgetSubmitted(userId: widget.userId, newLimit: newLimit),
+              );
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('✨ Monthly budget updated to ₹${newLimit.toStringAsFixed(0)}!'),
+              backgroundColor: AppColors.secondary,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
         },
       ),
     );
@@ -205,16 +228,19 @@ class _ExpenseDashboardScreenState extends State<ExpenseDashboardScreen> {
                       // Auto SMS Listener Settings Toggle
                       const SmsSettingsTile(),
 
-                      // Budget Progress Bar Card
-                      BudgetProgressBar(summary: state.summary),
-                      const SizedBox(height: 24),
+                      // Budget Progress Bar Card with Edit Button
+                      BudgetProgressBar(
+                        summary: state.summary,
+                        onEditBudget: () => _showEditBudgetDialog(context, state.summary.budgetLimit),
+                      ),
+                      const SizedBox(height: 20),
 
-                      // Category Filter Section Header
+                      // Section Title & Item Count
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text(
-                            'Recent Expenses',
+                            'Transactions',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -227,8 +253,18 @@ class _ExpenseDashboardScreenState extends State<ExpenseDashboardScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 10),
 
+                      // Date / Period Filter Bar (All, Today, This Week, This Month)
+                      DateFilterSelector(
+                        selectedFilter: state.selectedDateFilter,
+                        onFilterSelected: (filter) {
+                          context.read<ExpenseBloc>().add(DateFilterChanged(filter));
+                        },
+                      ),
+                      const SizedBox(height: 6),
+
+                      // Category Filter Chips
                       CategoryChipSelector(
                         categories: state.summary.categories,
                         selectedCategory: state.selectedCategory,
@@ -260,7 +296,7 @@ class _ExpenseDashboardScreenState extends State<ExpenseDashboardScreen> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'Tap + Add Expense below to record your first transaction',
+                                'Try selecting a different date or category filter',
                                 style: TextStyle(color: AppColors.textMuted, fontSize: 12),
                               ),
                             ],

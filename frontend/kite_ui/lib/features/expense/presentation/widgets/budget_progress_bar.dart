@@ -4,8 +4,13 @@ import '../../domain/entities/expense_summary_entity.dart';
 
 class BudgetProgressBar extends StatelessWidget {
   final ExpenseSummaryEntity summary;
+  final VoidCallback? onEditBudget;
 
-  const BudgetProgressBar({super.key, required this.summary});
+  const BudgetProgressBar({
+    super.key,
+    required this.summary,
+    this.onEditBudget,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -36,13 +41,45 @@ class BudgetProgressBar extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Monthly Budget',
-                style: TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
+              Row(
+                children: [
+                  const Text(
+                    'Monthly Budget',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  if (onEditBudget != null) ...[
+                    const SizedBox(width: 6),
+                    InkWell(
+                      onTap: onEditBudget,
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.accentBlue.withAlpha(30),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.edit_outlined, size: 12, color: AppColors.accentBlue),
+                            SizedBox(width: 4),
+                            Text(
+                              'Edit',
+                              style: TextStyle(
+                                color: AppColors.accentBlue,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

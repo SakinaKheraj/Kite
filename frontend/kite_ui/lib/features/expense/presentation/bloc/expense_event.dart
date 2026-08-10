@@ -45,6 +45,16 @@ class DeleteExpenseRequested extends ExpenseEvent {
   List<Object?> get props => [id, userId];
 }
 
+class UpdateBudgetSubmitted extends ExpenseEvent {
+  final String userId;
+  final double newLimit;
+
+  const UpdateBudgetSubmitted({required this.userId, required this.newLimit});
+
+  @override
+  List<Object?> get props => [userId, newLimit];
+}
+
 class CategoryFilterChanged extends ExpenseEvent {
   final String selectedCategory;
 
@@ -52,4 +62,13 @@ class CategoryFilterChanged extends ExpenseEvent {
 
   @override
   List<Object?> get props => [selectedCategory];
+}
+
+class DateFilterChanged extends ExpenseEvent {
+  final String selectedDateFilter;
+
+  const DateFilterChanged(this.selectedDateFilter);
+
+  @override
+  List<Object?> get props => [selectedDateFilter];
 }

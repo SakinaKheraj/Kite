@@ -18,6 +18,7 @@ import 'package:kite_ui/features/expense/domain/usecases/delete_expense_usecase.
 import 'package:kite_ui/features/expense/domain/usecases/get_expense_summary_usecase.dart';
 import 'package:kite_ui/features/expense/domain/usecases/get_expenses_usecase.dart';
 import 'package:kite_ui/features/expense/domain/usecases/parse_sms_usecase.dart';
+import 'package:kite_ui/features/expense/domain/usecases/update_budget_usecase.dart';
 import 'package:kite_ui/features/expense/domain/usecases/update_expense_usecase.dart';
 import 'package:kite_ui/features/expense/presentation/bloc/ai_parser_bloc.dart';
 import 'package:kite_ui/features/expense/presentation/bloc/expense_bloc.dart';
@@ -55,6 +56,7 @@ void main() {
       addExpenseUseCase: AddExpenseUseCase(expenseRepository),
       updateExpenseUseCase: UpdateExpenseUseCase(expenseRepository),
       deleteExpenseUseCase: DeleteExpenseUseCase(expenseRepository),
+      updateBudgetUseCase: UpdateBudgetUseCase(repository: expenseRepository),
     );
 
     final aiRemoteDataSource = AiRemoteDataSourceImpl(apiClient: apiClient);

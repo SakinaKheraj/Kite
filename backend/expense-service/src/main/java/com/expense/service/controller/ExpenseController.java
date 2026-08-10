@@ -78,6 +78,20 @@ public class ExpenseController {
         }
     }
 
+    // PUT /v1/expenses/budget/{userId} — Update monthly budget limit for a user
+    @PutMapping("/v1/expenses/budget/{userId}")
+    public ResponseEntity<Boolean> updateBudgetLimit(
+        @PathVariable("userId") String userId,
+        @RequestParam("limit") double newLimit
+    ) {
+        try {
+            boolean isUpdated = expenseService.updateBudgetLimit(userId, newLimit);
+            return new ResponseEntity<>(isUpdated, isUpdated ? HttpStatus.OK : HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            return new ResponseEntity<>(false, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     // GET /v1/expenses/user/{userId} — Fetch all expenses for a specific user
     @GetMapping("/v1/expenses/user/{userId}")
     public ResponseEntity<List<ExpenseDto>> getExpensesByUserId(@PathVariable("userId") String userId) {

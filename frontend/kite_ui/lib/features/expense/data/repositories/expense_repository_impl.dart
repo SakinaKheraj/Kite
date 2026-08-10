@@ -52,4 +52,9 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
   Future<bool> deleteExpense(dynamic id) async {
     return await remoteDataSource.deleteExpense(id);
   }
+
+  @override
+  Future<bool> updateBudgetLimit(String userId, double newLimit) async {
+    return await remoteDataSource.updateBudgetLimit(userId, newLimit);
+  }
 }

@@ -11,6 +11,11 @@ class AppColors {
   static const Color primaryVariant = Color(0xFF8B5CF6); // Purple
   static const Color secondary = Color(0xFF10B981); // Emerald
 
+  static const Color accentBlue = Color(0xFF6366F1);
+  static const Color cardBackground = Color(0xFF151A24);
+  static const Color backgroundDark = Color(0xFF0B0E14);
+  static const Color glassBorder = Color(0xFF2A3447);
+
   static const Color textPrimary = Color(0xFFF9FAFB);
   static const Color textSecondary = Color(0xFF9CA3AF);
   static const Color textMuted = Color(0xFF6B7280);

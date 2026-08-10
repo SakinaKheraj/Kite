@@ -138,6 +138,20 @@ public class ExpenseService {
             .build();
     }
 
+    public boolean updateBudgetLimit(String userId, double newLimit) {
+        try {
+            UserBudget budget = userBudgetRepository.findByUserId(userId)
+                .orElseGet(() -> UserBudget.builder().userId(userId).budgetLimit(10000.00).build());
+            budget.setBudgetLimit(newLimit);
+            userBudgetRepository.save(budget);
+            log.info("Updated budget limit to {} for user {}", newLimit, userId);
+            return true;
+        } catch (Exception e) {
+            log.error("Failed to update budget limit: {}", e.getMessage(), e);
+            return false;
+        }
+    }
+
     public boolean deleteExpense(Long id) {
         if (expenseRepository.existsById(id)) {
             expenseRepository.deleteById(id);

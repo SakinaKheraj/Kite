@@ -25,6 +25,7 @@ import 'features/expense/domain/usecases/delete_expense_usecase.dart';
 import 'features/expense/domain/usecases/get_expense_summary_usecase.dart';
 import 'features/expense/domain/usecases/get_expenses_usecase.dart';
 import 'features/expense/domain/usecases/parse_sms_usecase.dart';
+import 'features/expense/domain/usecases/update_budget_usecase.dart';
 import 'features/expense/domain/usecases/update_expense_usecase.dart';
 import 'features/expense/presentation/bloc/ai_parser_bloc.dart';
 import 'features/expense/presentation/bloc/expense_bloc.dart';
@@ -64,6 +65,7 @@ void main() {
   final addExpenseUseCase = AddExpenseUseCase(expenseRepository);
   final updateExpenseUseCase = UpdateExpenseUseCase(expenseRepository);
   final deleteExpenseUseCase = DeleteExpenseUseCase(expenseRepository);
+  final updateBudgetUseCase = UpdateBudgetUseCase(repository: expenseRepository);
 
   // AI Parser Data Source & Use Case
   final aiRemoteDataSource = AiRemoteDataSourceImpl(apiClient: apiClient);
@@ -90,6 +92,7 @@ void main() {
     addExpenseUseCase: addExpenseUseCase,
     updateExpenseUseCase: updateExpenseUseCase,
     deleteExpenseUseCase: deleteExpenseUseCase,
+    updateBudgetUseCase: updateBudgetUseCase,
   );
 
   final aiParserBloc = AiParserBloc(parseSmsUseCase: parseSmsUseCase);

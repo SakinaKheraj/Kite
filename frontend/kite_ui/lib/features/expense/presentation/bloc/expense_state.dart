@@ -22,12 +22,14 @@ class ExpenseLoaded extends ExpenseState {
   final List<ExpenseEntity> filteredExpenses;
   final ExpenseSummaryEntity summary;
   final String selectedCategory;
+  final String selectedDateFilter;
 
   const ExpenseLoaded({
     required this.expenses,
     required this.filteredExpenses,
     required this.summary,
     this.selectedCategory = 'All',
+    this.selectedDateFilter = 'All',
   });
 
   ExpenseLoaded copyWith({
@@ -35,12 +37,14 @@ class ExpenseLoaded extends ExpenseState {
     List<ExpenseEntity>? filteredExpenses,
     ExpenseSummaryEntity? summary,
     String? selectedCategory,
+    String? selectedDateFilter,
   }) {
     return ExpenseLoaded(
       expenses: expenses ?? this.expenses,
       filteredExpenses: filteredExpenses ?? this.filteredExpenses,
       summary: summary ?? this.summary,
       selectedCategory: selectedCategory ?? this.selectedCategory,
+      selectedDateFilter: selectedDateFilter ?? this.selectedDateFilter,
     );
   }
 
@@ -50,6 +54,7 @@ class ExpenseLoaded extends ExpenseState {
         filteredExpenses,
         summary,
         selectedCategory,
+        selectedDateFilter,
       ];
 }
 

@@ -35,35 +35,27 @@ public class TokenController {
     @PostMapping("/login")
     public ResponseEntity<?> authenticateAndGetToken(
             @RequestBody AuthRequestDTO authRequestDTO) {
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            authRequestDTO.getUsername(),
+                            authRequestDTO.getPassword()));
 
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        authRequestDTO.getUsername(),
-                        authRequestDTO.getPassword()));
+            if (authentication.isAuthenticated()) {
+                RefreshToken refreshToken = refreshTokenService.createRefreshToken(
+                        authRequestDTO.getUsername());
 
-        if (authentication.isAuthenticated()) {
-
-            RefreshToken refreshToken = refreshTokenService.createRefreshToken(
-                    authRequestDTO.getUsername());
-
-            return new ResponseEntity<>(
-
-                    JwtResponseDTO.builder()
-
-                            .accessToken(
-                                    jwtService.generateToken(
-                                            authRequestDTO.getUsername()))
-
-                            .token(refreshToken.getToken())
-
-                            .build(),
-
-                    HttpStatus.OK);
+                return new ResponseEntity<>(
+                        JwtResponseDTO.builder()
+                                .accessToken(jwtService.generateToken(authRequestDTO.getUsername()))
+                                .token(refreshToken.getToken())
+                                .build(),
+                        HttpStatus.OK);
+            }
+            return new ResponseEntity<>("Invalid username or password", HttpStatus.UNAUTHORIZED);
+        } catch (Exception e) {
+            return new ResponseEntity<>("Invalid username or password. Please Sign Up if you don't have an account.", HttpStatus.UNAUTHORIZED);
         }
-
-        return new ResponseEntity<>(
-                "Invalid username or password",
-                HttpStatus.UNAUTHORIZED);
     }
 
     @PostMapping("/refreshToken")
@@ -72,16 +64,13 @@ public class TokenController {
 
         return refreshTokenService
                 .findByToken(refreshTokenRequestDTO.getToken())
-
                 .map(refreshTokenService::verifyExpiration)
-
                 .map(refreshToken -> {
                     String accessToken = jwtService.generateToken(
                             refreshToken.getUserInfo().getUsername());
 
                     return new JwtResponseDTO(accessToken, refreshTokenRequestDTO.getToken());
                 })
-
                 .orElseThrow(() -> new RuntimeException(
                         "Refresh Token is not in DB..!!"));
     }

@@ -37,7 +37,9 @@ class SmsLocalDataSourceImpl implements SmsLocalDataSource {
     if (kIsWeb) return false;
     try {
       final bool? isGranted = await _telephony.requestPhoneAndSmsPermissions;
-      debugPrint('SmsLocalDataSource: Telephony request permissions = $isGranted');
+      debugPrint(
+        'SmsLocalDataSource: Telephony request permissions = $isGranted',
+      );
       if (isGranted == true) return true;
     } catch (e) {
       debugPrint('SmsLocalDataSource: Telephony permission error = $e');
@@ -60,12 +62,16 @@ class SmsLocalDataSourceImpl implements SmsLocalDataSource {
   void startListening(Function(String sender, String body) onSmsReceived) {
     if (kIsWeb) return;
     try {
-      debugPrint('SmsLocalDataSource: Registering Telephony listenIncomingSms...');
+      debugPrint(
+        'SmsLocalDataSource: Registering Telephony listenIncomingSms...',
+      );
       _telephony.listenIncomingSms(
         onNewMessage: (SmsMessage message) {
           final sender = message.address ?? '';
           final body = message.body ?? '';
-          debugPrint('SmsLocalDataSource: Raw SMS Caught -> Sender: "$sender", Body: "$body"');
+          debugPrint(
+            'SmsLocalDataSource: Raw SMS Caught -> Sender: "$sender", Body: "$body"',
+          );
           if (body.isNotEmpty) {
             onSmsReceived(sender, body);
           }
@@ -97,7 +103,10 @@ class SmsLocalDataSourceImpl implements SmsLocalDataSource {
       for (final item in rawList) {
         final parts = item.split('|||');
         if (parts.length >= 2) {
-          result.add({'sender': parts[0], 'body': parts.sublist(1).join('|||')});
+          result.add({
+            'sender': parts[0],
+            'body': parts.sublist(1).join('|||'),
+          });
         }
       }
       return result;

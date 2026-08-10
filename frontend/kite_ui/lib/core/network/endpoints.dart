@@ -1,24 +1,10 @@
-import 'package:flutter/foundation.dart';
-
 class Endpoints {
   Endpoints._();
 
-  // Dynamic IP Resolution
-  static String get _hostIp {
-    if (kIsWeb) {
-      return '192.168.56.101'; // Web browser -> VM Host-Only IP
-    }
-    return '127.0.0.1'; // Mobile device via ADB reverse port forwarding
-  }
-
-  // Auth Service Base URL (Port 9898)
-  static String get authBaseUrl => 'http://$_hostIp:9898';
-
-  // Expense Service Base URL (Port 9820)
-  static String get expenseBaseUrl => 'http://$_hostIp:9820';
-
-  // DS Service Base URL (Port 8010)
-  static String get dsBaseUrl => 'http://$_hostIp:8010';
+  // Render Cloud Live Base URLs
+  static const String authBaseUrl = 'https://kite-auth-service.onrender.com';
+  static const String expenseBaseUrl = 'https://kite-expense-service.onrender.com';
+  static const String dsBaseUrl = 'https://kite-ds-service.onrender.com';
 
   // Auth Endpoints
   static const String signup = '/auth/v1/signup';

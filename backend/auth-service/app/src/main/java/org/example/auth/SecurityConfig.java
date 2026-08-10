@@ -39,11 +39,12 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
                     .requestMatchers(CorsUtils::isPreFlightRequest).permitAll()
-                    .requestMatchers("/auth/v1/login", "/auth/v1/refreshToken", "/auth/v1/signup").permitAll()
+                    .requestMatchers("/auth/v1/login", "/auth/v1/refreshToken", "/auth/v1/signup", "/actuator/**", "/v1/**").permitAll()
                     .anyRequest().authenticated()
                 )    
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .httpBasic(Customizer.withDefaults())
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .formLogin(AbstractHttpConfigurer::disable)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .authenticationProvider(authenticationProvider())
                 .build();

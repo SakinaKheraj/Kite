@@ -3,6 +3,7 @@ package org.example.service;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.regex.Pattern;
 
 import org.example.entities.UserInfo;
@@ -88,11 +89,14 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                         encodedPassword,
                         new HashSet<>()));
 
-        try {
-            userInfoProducer.sendEventToKafka(userInfoEventToPublish(userInfoDto, userId));
-        } catch (Exception e) {
-            System.err.println("Kafka event send skipped (Kafka offline): " + e.getMessage());
-        }
+        // Fire-and-forget async Kafka publishing to prevent blocking HTTP response when Kafka is offline
+        CompletableFuture.runAsync(() -> {
+            try {
+                userInfoProducer.sendEventToKafka(userInfoEventToPublish(userInfoDto, userId));
+            } catch (Throwable e) {
+                System.err.println("Kafka event send skipped (Kafka offline): " + e.getMessage());
+            }
+        });
 
         System.out.println("USER SIGNUP SUCCESSFUL: " + userInfoDto.getUsername());
         return true;

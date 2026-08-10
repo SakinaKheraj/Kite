@@ -36,42 +36,49 @@ class SmsLocalDataSourceImpl implements SmsLocalDataSource {
   Future<bool> requestSmsPermission() async {
     if (kIsWeb) return false;
     try {
-      final bool? isGranted = await _telephony.requestPhoneAndSmsPermissions;
-      debugPrint(
-        'SmsLocalDataSource: Telephony request permissions = $isGranted',
-      );
-      if (isGranted == true) return true;
-    } catch (e) {
-      debugPrint('SmsLocalDataSource: Telephony permission error = $e');
-    }
+      final status = await Permission.sms.status;
+      debugPrint('SmsLocalDataSource: Current SMS permission status = $status');
+      if (status.isGranted) return true;
 
-    final statuses = await [Permission.sms, Permission.phone].request();
-    final isSmsGranted = statuses[Permission.sms]?.isGranted ?? false;
-    debugPrint('SmsLocalDataSource: permission_handler status = $isSmsGranted');
-    return isSmsGranted;
+      if (status.isPermanentlyDenied) {
+        debugPrint('SmsLocalDataSource: SMS permission is permanently denied. Opening settings...');
+        await openAppSettings();
+        return false;
+      }
+
+      final result = await Permission.sms.request();
+      debugPrint('SmsLocalDataSource: Permission.sms request result = ${result.isGranted}');
+      if (result.isPermanentlyDenied) {
+        await openAppSettings();
+      }
+      return result.isGranted;
+    } catch (e) {
+      debugPrint('SmsLocalDataSource: SMS permission request error = $e');
+      return false;
+    }
   }
 
   @override
   Future<bool> isPermissionGranted() async {
     if (kIsWeb) return false;
-    final status = await Permission.sms.status;
-    return status.isGranted;
+    try {
+      final status = await Permission.sms.status;
+      return status.isGranted;
+    } catch (e) {
+      return false;
+    }
   }
 
   @override
   void startListening(Function(String sender, String body) onSmsReceived) {
     if (kIsWeb) return;
     try {
-      debugPrint(
-        'SmsLocalDataSource: Registering Telephony listenIncomingSms...',
-      );
+      debugPrint('SmsLocalDataSource: Registering Telephony listenIncomingSms...');
       _telephony.listenIncomingSms(
         onNewMessage: (SmsMessage message) {
           final sender = message.address ?? '';
           final body = message.body ?? '';
-          debugPrint(
-            'SmsLocalDataSource: Raw SMS Caught -> Sender: "$sender", Body: "$body"',
-          );
+          debugPrint('SmsLocalDataSource: Raw SMS Caught -> Sender: "$sender", Body: "$body"');
           if (body.isNotEmpty) {
             onSmsReceived(sender, body);
           }
@@ -103,10 +110,7 @@ class SmsLocalDataSourceImpl implements SmsLocalDataSource {
       for (final item in rawList) {
         final parts = item.split('|||');
         if (parts.length >= 2) {
-          result.add({
-            'sender': parts[0],
-            'body': parts.sublist(1).join('|||'),
-          });
+          result.add({'sender': parts[0], 'body': parts.sublist(1).join('|||')});
         }
       }
       return result;

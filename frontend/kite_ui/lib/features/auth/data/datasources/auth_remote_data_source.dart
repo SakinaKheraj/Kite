@@ -18,13 +18,27 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     if (e.response != null && e.response?.data != null) {
       final data = e.response!.data;
       if (data is String && data.trim().isNotEmpty) {
-        return data.trim();
+        final str = data.trim();
+        // Ignore generic HTML error pages
+        if (!str.contains("<html>") && !str.contains("<!DOCTYPE") && !str.contains("Internal Server Error")) {
+          return str;
+        }
       } else if (data is Map) {
         if (data['message'] != null) return data['message'].toString();
         if (data['error'] != null) return data['error'].toString();
       }
     }
-    return e.message ?? 'Server connection error';
+
+    final statusCode = e.response?.statusCode;
+    if (statusCode == 401 || statusCode == 403 || statusCode == 404 || statusCode == 500) {
+      return "Account not found or password incorrect. Please tap 'Sign Up' to create an account.";
+    }
+
+    if (e.type == DioExceptionType.connectionTimeout || e.type == DioExceptionType.receiveTimeout) {
+      return "Server waking up (~30s). Please tap Sign In again in a few seconds!";
+    }
+
+    return "Account not found or server error. Please tap 'Sign Up' to create an account.";
   }
 
   @override

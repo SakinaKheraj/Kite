@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 
 import com.expense.service.dto.UserInfoEventDto;
 import com.expense.service.service.ExpenseService;
-import tools.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.extern.slf4j.Slf4j;
 

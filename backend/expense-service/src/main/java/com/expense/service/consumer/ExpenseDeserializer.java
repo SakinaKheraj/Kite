@@ -6,7 +6,7 @@ import org.apache.kafka.common.serialization.Deserializer;
 
 import com.expense.service.dto.ExpenseDto;
 
-import tools.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class ExpenseDeserializer implements Deserializer<ExpenseDto>{
 
